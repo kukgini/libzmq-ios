@@ -150,7 +150,10 @@ do
 
     echo "Building ${LIBNAME} for ${ARCH}..."
     cd ${LIBDIR}
-    
+
+    # Workaround to disable clock_gettime since it is only available on iOS 10+
+    cp ../platform-patched.hpp src/platform.hpp
+
     make -j8 V=0
     make install
 
