@@ -40,7 +40,7 @@ SDK=$(xcodebuild -showsdks \
     | grep iphoneos | sort | tail -n 1 | awk '{print substr($NF, 9)}'
     )
 
-IOS_VERSION_MIN=8.0
+IOS_VERSION_MIN=9.0
 OTHER_LDFLAGS=""
 OTHER_CFLAGS="-Os -Qunused-arguments"
 # Enable Bitcode
