@@ -1,6 +1,9 @@
 #!/bin/sh
+
+#
 # A script to download and build libzmq for iOS, including arm64
-# Adapted from https://raw2.github.com/seb-m/CryptoPill/master/libsodium.sh
+# Adapted from https://github.com/seb-m/CryptoPill/blob/master/libsodium.sh
+#
 
 set -e
 
