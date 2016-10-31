@@ -9,6 +9,9 @@
 
 require "FileUtils"
 
+# for now
+exit 1
+
 LIBNAME="libzmq.a"
 ROOTDIR=Dir.pwd
 
@@ -30,7 +33,7 @@ SCRIPTDIR=File.dirname(__FILE__)
 LIBDIR="libzeromq"
 FileUtils.mkdir_p LIBDIR
 
-# LIBDIR=$( (cd "${LIBDIR}"  && pwd) )
+# LIBDIR=$( (cd "#{LIBDIR}"  && pwd) )
 # Destination directory for build and install
 DSTDIR=SCRIPTDIR
 BUILDDIR="#{DSTDIR}/libzmq_build"
@@ -51,7 +54,7 @@ IOS_VERSION_MIN=9.0
 OTHER_LDFLAGS=""
 OTHER_CFLAGS="-Os -Qunused-arguments"
 # Enable Bitcode
-OTHER_CPPFLAGS="-Os -I${LIBSODIUM_DIST}/include -fembed-bitcode"
+OTHER_CPPFLAGS="-Os -I#{LIBSODIUM_DIST}/include -fembed-bitcode"
 OTHER_CXXFLAGS="-Os"
 
 # Download and extract ZeroMQ
@@ -77,86 +80,107 @@ FileUtils.cd LIBDIR
 
 # Iterate over archs and compile static libs
 for ARCH in ARCHS
-  puts ARCH
+  BUILDARCHDIR="#{BUILDDIR}/#{ARCH}"
+  FileUtils.mkdir_p BUILDARCHDIR
+  
+  case ARCH
+    when "armv7"
+      build_armv7()
+    when "armv7s"
+      build_armv7s()
+    when "arm64"
+      build_arm64()
+    when "i386"
+      build_i386()
+    when "x86_64"
+      build_x86_64()
+    else
+      puts "Unsupported architecture '#{ARCH}'"
+      exit 1
+  end
 end
+
+def build_armv7
+  platform="iPhoneOS"
+  HOST="#{ARCH}-apple-darwin"
+  env = {
+    BASEDIR  => "#{DEVELOPER}/Platforms/#{PLATFORM}.platform/Developer",
+    ISDKROOT => "#{BASEDIR}/SDKs/#{PLATFORM}#{SDK}.sdk",
+    CXXFLAGS => "#{OTHER_CXXFLAGS}",
+    CPPFLAGS => "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}",
+    LDFLAGS  => "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}",
+  }
+  return env
+end
+
+def build_armv7s
+  PLATFORM="iPhoneOS"
+  HOST="#{ARCH}-apple-darwin"
+  env = {
+    BASEDIR  => "#{DEVELOPER}/Platforms/#{PLATFORM}.platform/Developer",
+    ISDKROOT => "#{BASEDIR}/SDKs/#{PLATFORM}#{SDK}.sdk",
+    CXXFLAGS => "#{OTHER_CXXFLAGS}",
+    CPPFLAGS => "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}",
+    LDFLAGS  => "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}",
+  }
+  return env
+end
+
+def build_arm64
+  PLATFORM="iPhoneOS"
+  HOST="arm-apple-darwin"
+  env = {
+    BASEDIR  => "#{DEVELOPER}/Platforms/#{PLATFORM}.platform/Developer",
+    ISDKROOT => "#{BASEDIR}/SDKs/#{PLATFORM}#{SDK}.sdk",
+    CXXFLAGS => "#{OTHER_CXXFLAGS}",
+    CPPFLAGS => "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}",
+    LDFLAGS  => "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}",
+  }
+  return env
+end
+
+def build_i386
+  PLATFORM="iPhoneSimulator"
+  HOST="#{ARCH}-apple-darwin"
+  env = {
+    BASEDIR  => "#{DEVELOPER}/Platforms/#{PLATFORM}.platform/Developer",
+    ISDKROOT => "#{BASEDIR}/SDKs/#{PLATFORM}#{SDK}.sdk",
+    CXXFLAGS => "#{OTHER_CXXFLAGS}",
+    CPPFLAGS => "-m32 -arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}",
+    LDFLAGS  => "-m32 -arch #{ARCH} #{OTHER_LDFLAGS}",
+  }
+  return env
+end
+
+def build_x86_64
+  PLATFORM="iPhoneSimulator"
+  HOST="#{ARCH}-apple-darwin"
+  env = {
+    BASEDIR  => "#{DEVELOPER}/Platforms/#{PLATFORM}.platform/Developer",
+    ISDKROOT => "#{BASEDIR}/SDKs/#{PLATFORM}#{SDK}.sdk",
+    CXXFLAGS => "#{OTHER_CXXFLAGS}",
+    CPPFLAGS => "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}",
+    LDFLAGS  => "-arch #{ARCH} #{OTHER_LDFLAGS}",
+  }
+  return env
+end
+
 # 
-# for ARCH in $ARCHS
-# do
-#     BUILDARCHDIR="$BUILDDIR/$ARCH"
-#     mkdir -p ${BUILDARCHDIR}
+#     export PATH="#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin:#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/sbin:$PATH"
 # 
-#     case ${ARCH} in
-#         armv7)
-# 	    PLATFORM="iPhoneOS"
-# 	    HOST="${ARCH}-apple-darwin"
-# 	    export BASEDIR="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
-# 	    export ISDKROOT="${BASEDIR}/SDKs/${PLATFORM}${SDK}.sdk"
-# 	    export CXXFLAGS="${OTHER_CXXFLAGS}"
-# 	    export CPPFLAGS="-arch ${ARCH} -isysroot ${ISDKROOT} -mios-version-min=${IOS_VERSION_MIN} ${OTHER_CPPFLAGS}"
-# 	    export LDFLAGS="-arch ${ARCH} -isysroot ${ISDKROOT} ${OTHER_LDFLAGS}"
-#             ;;
-# 
-#         armv7s)
-# 	    PLATFORM="iPhoneOS"
-# 	    HOST="${ARCH}-apple-darwin"
-# 	    export BASEDIR="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
-# 	    export ISDKROOT="${BASEDIR}/SDKs/${PLATFORM}${SDK}.sdk"
-# 	    export CXXFLAGS="${OTHER_CXXFLAGS}"
-# 	    export CPPFLAGS="-arch ${ARCH} -isysroot ${ISDKROOT} -mios-version-min=${IOS_VERSION_MIN} ${OTHER_CPPFLAGS}"
-# 	    export LDFLAGS="-arch ${ARCH} -isysroot ${ISDKROOT} ${OTHER_LDFLAGS}"
-#             ;;
-# 
-#         arm64)
-# 	    PLATFORM="iPhoneOS"
-# 	    HOST="arm-apple-darwin"
-# 	    export BASEDIR="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
-# 	    export ISDKROOT="${BASEDIR}/SDKs/${PLATFORM}${SDK}.sdk"
-# 	    export CXXFLAGS="${OTHER_CXXFLAGS}"
-# 	    export CPPFLAGS="-arch ${ARCH} -isysroot ${ISDKROOT} -mios-version-min=${IOS_VERSION_MIN} ${OTHER_CPPFLAGS}"
-# 	    export LDFLAGS="-arch ${ARCH} -isysroot ${ISDKROOT} ${OTHER_LDFLAGS}"
-#             ;;
-# 
-#         i386)
-# 	    PLATFORM="iPhoneSimulator"
-# 	    HOST="${ARCH}-apple-darwin"
-# 	    export BASEDIR="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
-# 	    export ISDKROOT="${BASEDIR}/SDKs/${PLATFORM}${SDK}.sdk"
-# 	    export CXXFLAGS="${OTHER_CXXFLAGS}"
-# 	    export CPPFLAGS="-m32 -arch ${ARCH} -isysroot ${ISDKROOT} -mios-version-min=${IOS_VERSION_MIN} ${OTHER_CPPFLAGS}"
-# 	    export LDFLAGS="-m32 -arch ${ARCH} ${OTHER_LDFLAGS}"
-#             ;;
-# 
-#         x86_64)
-# 	    PLATFORM="iPhoneSimulator"
-# 	    HOST="${ARCH}-apple-darwin"
-# 	    export BASEDIR="${DEVELOPER}/Platforms/${PLATFORM}.platform/Developer"
-# 	    export ISDKROOT="${BASEDIR}/SDKs/${PLATFORM}${SDK}.sdk"
-# 	    export CXXFLAGS="${OTHER_CXXFLAGS}"
-# 	    export CPPFLAGS="-arch ${ARCH} -isysroot ${ISDKROOT} -mios-version-min=${IOS_VERSION_MIN} ${OTHER_CPPFLAGS}"
-# 	    export LDFLAGS="-arch ${ARCH} ${OTHER_LDFLAGS}"
-# 	    echo "LDFLAGS $LDFLAGS"
-#             ;;
-#         *)
-# 	    echo "Unsupported architecture ${ARCH}"
-# 	    exit 1
-#             ;;
-#     esac
-# 
-#     export PATH="${DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin:${DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/sbin:$PATH"
-# 
-#     echo "Configuring for ${ARCH}..."
+#     echo "Configuring for #{ARCH}..."
 #     set +e
-#     cd ${LIBDIR} && make distclean
+#     cd #{LIBDIR} && make distclean
 #     set -e
-#     ${LIBDIR}/configure \
-# 	--prefix=${BUILDARCHDIR} \
+#     #{LIBDIR}/configure \
+# 	--prefix=#{BUILDARCHDIR} \
 # 	--disable-shared \
 # 	--enable-static \
-# 	--host=${HOST}\
-# 	--with-libsodium=${LIBSODIUM_DIST}
+# 	--host=#{HOST}\
+# 	--with-libsodium=#{LIBSODIUM_DIST}
 # 
-#     echo "Building ${LIBNAME} for ${ARCH}..."
-#     cd ${LIBDIR}
+#     echo "Building #{LIBNAME} for #{ARCH}..."
+#     cd #{LIBDIR}
 # 
 #     # Workaround to disable clock_gettime since it is only available on iOS 10+
 #     cp ../platform-patched.hpp src/platform.hpp
@@ -164,17 +188,17 @@ end
 #     make -j8 V=0
 #     make install
 # 
-#     LIBLIST+="${BUILDARCHDIR}/lib/${LIBNAME} "
+#     LIBLIST+="#{BUILDARCHDIR}/lib/#{LIBNAME} "
 # done
 # 
 # # Copy headers and generate a single fat library file
-# mkdir -p ${DISTLIBDIR}
-# ${LIPO} -create ${LIBLIST} -output ${DISTLIBDIR}/${LIBNAME}
+# mkdir -p #{DISTLIBDIR}
+# #{LIPO} -create #{LIBLIST} -output #{DISTLIBDIR}/#{LIBNAME}
 # for ARCH in $ARCHS
 # do
-#     cp -R $BUILDDIR/$ARCH/include ${DISTDIR}
+#     cp -R $BUILDDIR/$ARCH/include #{DISTDIR}
 #     break
 # done
-# 
-# # Cleanup
-# rm -rf ${BUILDDIR}
+
+# Cleanup
+FileUtils.rm_rf(BUILDDIR)
