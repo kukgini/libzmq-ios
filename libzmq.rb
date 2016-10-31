@@ -33,7 +33,8 @@ SCRIPTDIR=File.dirname(__FILE__)
 LIBDIR="libzeromq"
 FileUtils.mkdir_p LIBDIR
 
-# LIBDIR=$( (cd "#{LIBDIR}"  && pwd) )
+LIBDIR=File.dirname(LIBDIR)
+
 # Destination directory for build and install
 DSTDIR=SCRIPTDIR
 BUILDDIR="#{DSTDIR}/libzmq_build"
@@ -53,6 +54,7 @@ TARURL="https://github.com/zeromq/zeromq4-1/releases/download/v#{TARVER}/#{TARFI
 IOS_VERSION_MIN=9.0
 OTHER_LDFLAGS=""
 OTHER_CFLAGS="-Os -Qunused-arguments"
+
 # Enable Bitcode
 OTHER_CPPFLAGS="-Os -I#{LIBSODIUM_DIST}/include -fembed-bitcode"
 OTHER_CXXFLAGS="-Os"
@@ -62,8 +64,8 @@ FileUtils.rm_rf LIBDIR
 # set -e
 # curl -O -L $TARURL
 # tar xzf $TARFILE
-#FileUtils.rm TARFILE
-#FileUtils.mv TARNAME, LIBDIR
+FileUtils.rm TARFILE
+FileUtils.mv TARNAME, LIBDIR
  
 # Cleanup
 if File.directory? BUILDDIR
@@ -77,6 +79,56 @@ FileUtils.mkdir_p DISTDIR
 
 # Generate autoconf files
 FileUtils.cd LIBDIR
+
+def build_armv7
+  platform="iPhoneOS"
+  HOST="#{ARCH}-apple-darwin"
+  ENV{BASEDIR}  = "#{DEVELOPER}/Platforms/#{PLATFORM}.platform/Developer",
+  ENV{ISDKROOT} = "#{BASEDIR}/SDKs/#{PLATFORM}#{SDK}.sdk",
+  ENV{CXXFLAGS} = "#{OTHER_CXXFLAGS}",
+  ENV{CPPFLAGS} = "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}",
+  ENV{LDFLAGS} = "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}",
+end
+
+def build_armv7s
+  PLATFORM="iPhoneOS"
+  HOST="#{ARCH}-apple-darwin"
+  ENV{BASEDIR} = "#{DEVELOPER}/Platforms/#{PLATFORM}.platform/Developer",
+  ENV{ISDKROOT} = "#{BASEDIR}/SDKs/#{PLATFORM}#{SDK}.sdk",
+  ENV{CXXFLAGS} = "#{OTHER_CXXFLAGS}",
+  ENV{CPPFLAGS} = "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}",
+  ENV{LDFLAGS} = "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}",
+end
+
+def build_arm64
+  PLATFORM="iPhoneOS"
+  HOST="arm-apple-darwin"
+  ENV{BASEDIR} = "#{DEVELOPER}/Platforms/#{PLATFORM}.platform/Developer",
+  ENV{ISDKROOT} = "#{BASEDIR}/SDKs/#{PLATFORM}#{SDK}.sdk",
+  ENV{CXXFLAGS} = "#{OTHER_CXXFLAGS}",
+  ENV{CPPFLAGS} = "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}",
+  ENV{LDFLAGS} = "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}",
+end
+
+def build_i386
+  PLATFORM="iPhoneSimulator"
+  HOST="#{ARCH}-apple-darwin"
+  ENV{BASEDIR} = "#{DEVELOPER}/Platforms/#{PLATFORM}.platform/Developer",
+  ENV{ISDKROOT} = "#{BASEDIR}/SDKs/#{PLATFORM}#{SDK}.sdk",
+  ENV{CXXFLAGS} = "#{OTHER_CXXFLAGS}",
+  ENV{CPPFLAGS} = "-m32 -arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}",
+  ENV{LDFLAGS} = "-m32 -arch #{ARCH} #{OTHER_LDFLAGS}",
+end
+
+def build_x86_64
+  PLATFORM="iPhoneSimulator"
+  HOST="#{ARCH}-apple-darwin"
+  ENV{BASEDIR} = "#{DEVELOPER}/Platforms/#{PLATFORM}.platform/Developer",
+  ENV{ISDKROOT} = "#{BASEDIR}/SDKs/#{PLATFORM}#{SDK}.sdk",
+  ENV{CXXFLAGS} = "#{OTHER_CXXFLAGS}",
+  ENV{CPPFLAGS} = "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}",
+  ENV{LDFLAGS} = "-arch #{ARCH} #{OTHER_LDFLAGS}",
+end
 
 # Iterate over archs and compile static libs
 for ARCH in ARCHS
@@ -98,77 +150,13 @@ for ARCH in ARCHS
       puts "Unsupported architecture '#{ARCH}'"
       exit 1
   end
-end
 
-def build_armv7
-  platform="iPhoneOS"
-  HOST="#{ARCH}-apple-darwin"
-  env = {
-    BASEDIR  => "#{DEVELOPER}/Platforms/#{PLATFORM}.platform/Developer",
-    ISDKROOT => "#{BASEDIR}/SDKs/#{PLATFORM}#{SDK}.sdk",
-    CXXFLAGS => "#{OTHER_CXXFLAGS}",
-    CPPFLAGS => "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}",
-    LDFLAGS  => "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}",
-  }
-  return env
-end
+  ENV{PATH} = "#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin:#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/sbin:#{ENV{PATH}}"
+  puts "Configuring for #{ARCH}..."
 
-def build_armv7s
-  PLATFORM="iPhoneOS"
-  HOST="#{ARCH}-apple-darwin"
-  env = {
-    BASEDIR  => "#{DEVELOPER}/Platforms/#{PLATFORM}.platform/Developer",
-    ISDKROOT => "#{BASEDIR}/SDKs/#{PLATFORM}#{SDK}.sdk",
-    CXXFLAGS => "#{OTHER_CXXFLAGS}",
-    CPPFLAGS => "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}",
-    LDFLAGS  => "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}",
-  }
-  return env
-end
-
-def build_arm64
-  PLATFORM="iPhoneOS"
-  HOST="arm-apple-darwin"
-  env = {
-    BASEDIR  => "#{DEVELOPER}/Platforms/#{PLATFORM}.platform/Developer",
-    ISDKROOT => "#{BASEDIR}/SDKs/#{PLATFORM}#{SDK}.sdk",
-    CXXFLAGS => "#{OTHER_CXXFLAGS}",
-    CPPFLAGS => "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}",
-    LDFLAGS  => "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}",
-  }
-  return env
-end
-
-def build_i386
-  PLATFORM="iPhoneSimulator"
-  HOST="#{ARCH}-apple-darwin"
-  env = {
-    BASEDIR  => "#{DEVELOPER}/Platforms/#{PLATFORM}.platform/Developer",
-    ISDKROOT => "#{BASEDIR}/SDKs/#{PLATFORM}#{SDK}.sdk",
-    CXXFLAGS => "#{OTHER_CXXFLAGS}",
-    CPPFLAGS => "-m32 -arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}",
-    LDFLAGS  => "-m32 -arch #{ARCH} #{OTHER_LDFLAGS}",
-  }
-  return env
-end
-
-def build_x86_64
-  PLATFORM="iPhoneSimulator"
-  HOST="#{ARCH}-apple-darwin"
-  env = {
-    BASEDIR  => "#{DEVELOPER}/Platforms/#{PLATFORM}.platform/Developer",
-    ISDKROOT => "#{BASEDIR}/SDKs/#{PLATFORM}#{SDK}.sdk",
-    CXXFLAGS => "#{OTHER_CXXFLAGS}",
-    CPPFLAGS => "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}",
-    LDFLAGS  => "-arch #{ARCH} #{OTHER_LDFLAGS}",
-  }
-  return env
 end
 
 # 
-#     export PATH="#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin:#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/sbin:$PATH"
-# 
-#     echo "Configuring for #{ARCH}..."
 #     set +e
 #     cd #{LIBDIR} && make distclean
 #     set -e
@@ -190,15 +178,15 @@ end
 # 
 #     LIBLIST+="#{BUILDARCHDIR}/lib/#{LIBNAME} "
 # done
-# 
-# # Copy headers and generate a single fat library file
-# mkdir -p #{DISTLIBDIR}
-# #{LIPO} -create #{LIBLIST} -output #{DISTLIBDIR}/#{LIBNAME}
-# for ARCH in $ARCHS
-# do
-#     cp -R $BUILDDIR/$ARCH/include #{DISTDIR}
-#     break
-# done
+ 
+# Copy headers and generate a single fat library file
+FileUtils.mkdir_p DISTLIBDIR
+system "#{LIPO} -create #{LIBLIST} -output #{DISTLIBDIR}/#{LIBNAME}"
+
+for ARCH in $ARCHS
+  FileUtils.cp_r "#{BUILDDIR}/#{ARCH}/include", DISTDIR
+  break
+end
 
 # Cleanup
-FileUtils.rm_rf(BUILDDIR)
+FileUtils.rm_rf BUILDDIR
