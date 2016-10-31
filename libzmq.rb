@@ -131,6 +131,7 @@ def build_x86_64
 end
 
 # Iterate over archs and compile static libs
+liblist = []
 for ARCH in ARCHS
   BUILDARCHDIR="#{BUILDDIR}/#{ARCH}"
   FileUtils.mkdir_p BUILDARCHDIR
@@ -154,8 +155,6 @@ for ARCH in ARCHS
   ENV["PATH"] = "#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin:#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/sbin:#{ENV["PATH"]}"
   puts "Configuring for #{ARCH}..."
 
-end
-
 # 
 #     set +e
 #     cd #{LIBDIR} && make distclean
@@ -166,22 +165,22 @@ end
 # 	--enable-static \
 # 	--host=#{HOST}\
 # 	--with-libsodium=#{LIBSODIUM_DIST}
-# 
-#     echo "Building #{LIBNAME} for #{ARCH}..."
-#     cd #{LIBDIR}
-# 
-#     # Workaround to disable clock_gettime since it is only available on iOS 10+
-#     cp ../platform-patched.hpp src/platform.hpp
-# 
-#     make -j8 V=0
-#     make install
-# 
-#     LIBLIST+="#{BUILDARCHDIR}/lib/#{LIBNAME} "
-# done
+ 
+  puts "Building #{LIBNAME} for #{ARCH}..."
+  FileUtils.cd LIBDIR
+
+  # Workaround to disable clock_gettime since it is only available on iOS 10+
+  FileUtils.cp("../platform-patched.hpp", "src/platform.hpp")
+   
+  system "make -j8 V=0"
+  system "make install"
+
+  liblist.push "#{BUILDARCHDIR}/lib/#{LIBNAME}"
+end
  
 # Copy headers and generate a single fat library file
 FileUtils.mkdir_p DISTLIBDIR
-system "#{LIPO} -create #{LIBLIST} -output #{DISTLIBDIR}/#{LIBNAME}"
+system "#{LIPO} -create #{liblist.join(" ")} -output #{DISTLIBDIR}/#{LIBNAME}"
 
 for ARCH in $ARCHS
   FileUtils.cp_r "#{BUILDDIR}/#{ARCH}/include", DISTDIR
