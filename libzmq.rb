@@ -82,52 +82,52 @@ FileUtils.cd LIBDIR
 
 def build_armv7
   platform="iPhoneOS"
-  HOST="#{ARCH}-apple-darwin"
-  ENV{BASEDIR}  = "#{DEVELOPER}/Platforms/#{PLATFORM}.platform/Developer",
-  ENV{ISDKROOT} = "#{BASEDIR}/SDKs/#{PLATFORM}#{SDK}.sdk",
-  ENV{CXXFLAGS} = "#{OTHER_CXXFLAGS}",
-  ENV{CPPFLAGS} = "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}",
-  ENV{LDFLAGS} = "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}",
+  host="#{ARCH}-apple-darwin"
+  ENV["BASEDIR"]  = "#{DEVELOPER}/Platforms/#{platform}.platform/Developer"
+  ENV["ISDKROOT"] = "#{BASEDIR}/SDKs/#{platform}#{SDK}.sdk"
+  ENV["CXXFLAGS"] = "#{OTHER_CXXFLAGS}"
+  ENV["CPPFLAGS"] = "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+  ENV["LDFLAGS"] = "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}"
 end
 
 def build_armv7s
-  PLATFORM="iPhoneOS"
-  HOST="#{ARCH}-apple-darwin"
-  ENV{BASEDIR} = "#{DEVELOPER}/Platforms/#{PLATFORM}.platform/Developer",
-  ENV{ISDKROOT} = "#{BASEDIR}/SDKs/#{PLATFORM}#{SDK}.sdk",
-  ENV{CXXFLAGS} = "#{OTHER_CXXFLAGS}",
-  ENV{CPPFLAGS} = "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}",
-  ENV{LDFLAGS} = "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}",
+  platform="iPhoneOS"
+  host="#{ARCH}-apple-darwin"
+  ENV["BASEDIR"] = "#{DEVELOPER}/Platforms/#{platform}.platform/Developer"
+  ENV["ISDKROOT"] = "#{BASEDIR}/SDKs/#{platform}#{SDK}.sdk"
+  ENV["CXXFLAGS"] = "#{OTHER_CXXFLAGS}"
+  ENV["CPPFLAGS"] = "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+  ENV["LDFLAGS"] = "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}"
 end
 
 def build_arm64
-  PLATFORM="iPhoneOS"
-  HOST="arm-apple-darwin"
-  ENV{BASEDIR} = "#{DEVELOPER}/Platforms/#{PLATFORM}.platform/Developer",
-  ENV{ISDKROOT} = "#{BASEDIR}/SDKs/#{PLATFORM}#{SDK}.sdk",
-  ENV{CXXFLAGS} = "#{OTHER_CXXFLAGS}",
-  ENV{CPPFLAGS} = "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}",
-  ENV{LDFLAGS} = "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}",
+  platform="iPhoneOS"
+  host="arm-apple-darwin"
+  ENV["BASEDIR"] = "#{DEVELOPER}/Platforms/#{platform}.platform/Developer"
+  ENV["ISDKROOT"] = "#{BASEDIR}/SDKs/#{platform}#{SDK}.sdk"
+  ENV["CXXFLAGS"] = "#{OTHER_CXXFLAGS}"
+  ENV["CPPFLAGS"] = "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+  ENV["LDFLAGS"] = "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}"
 end
 
 def build_i386
-  PLATFORM="iPhoneSimulator"
-  HOST="#{ARCH}-apple-darwin"
-  ENV{BASEDIR} = "#{DEVELOPER}/Platforms/#{PLATFORM}.platform/Developer",
-  ENV{ISDKROOT} = "#{BASEDIR}/SDKs/#{PLATFORM}#{SDK}.sdk",
-  ENV{CXXFLAGS} = "#{OTHER_CXXFLAGS}",
-  ENV{CPPFLAGS} = "-m32 -arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}",
-  ENV{LDFLAGS} = "-m32 -arch #{ARCH} #{OTHER_LDFLAGS}",
+  platform="iPhoneSimulator"
+  host="#{ARCH}-apple-darwin"
+  ENV["BASEDIR"] = "#{DEVELOPER}/Platforms/#{platform}.platform/Developer"
+  ENV["ISDKROOT"] = "#{BASEDIR}/SDKs/#{platform}#{SDK}.sdk"
+  ENV["CXXFLAGS"] = "#{OTHER_CXXFLAGS}"
+  ENV["CPPFLAGS"] = "-m32 -arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+  ENV["LDFLAGS"] = "-m32 -arch #{ARCH} #{OTHER_LDFLAGS}"
 end
 
 def build_x86_64
-  PLATFORM="iPhoneSimulator"
-  HOST="#{ARCH}-apple-darwin"
-  ENV{BASEDIR} = "#{DEVELOPER}/Platforms/#{PLATFORM}.platform/Developer",
-  ENV{ISDKROOT} = "#{BASEDIR}/SDKs/#{PLATFORM}#{SDK}.sdk",
-  ENV{CXXFLAGS} = "#{OTHER_CXXFLAGS}",
-  ENV{CPPFLAGS} = "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}",
-  ENV{LDFLAGS} = "-arch #{ARCH} #{OTHER_LDFLAGS}",
+  platform="iPhoneSimulator"
+  host="#{ARCH}-apple-darwin"
+  ENV["BASEDIR"] = "#{DEVELOPER}/Platforms/#{platform}.platform/Developer"
+  ENV["ISDKROOT"] = "#{BASEDIR}/SDKs/#{platform}#{SDK}.sdk"
+  ENV["CXXFLAGS"] = "#{OTHER_CXXFLAGS}"
+  ENV["CPPFLAGS"] = "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+  ENV["LDFLAGS"] = "-arch #{ARCH} #{OTHER_LDFLAGS}"
 end
 
 # Iterate over archs and compile static libs
@@ -151,7 +151,7 @@ for ARCH in ARCHS
       exit 1
   end
 
-  ENV{PATH} = "#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin:#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/sbin:#{ENV{PATH}}"
+  ENV["PATH"] = "#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin:#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/sbin:#{ENV["PATH"]}"
   puts "Configuring for #{ARCH}..."
 
 end
