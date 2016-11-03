@@ -151,7 +151,9 @@ for ARCH in ARCHS
       exit 1
   end
 
-  ENV["PATH"]     = "#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin:#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/sbin:#{ENV["PATH"]}"
+  ENV["PATH"] = "#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin:"  +
+                "#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/sbin:" +
+                ENV["PATH"]
   puts "Configuring for #{ARCH}..."
 
 #
