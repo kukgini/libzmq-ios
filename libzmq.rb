@@ -36,14 +36,14 @@ FileUtils.mkdir_p LIBDIR
 LIBDIR=File.dirname(LIBDIR)
 
 # Destination directory for build and install
-DSTDIR=SCRIPTDIR
-BUILDDIR="#{DSTDIR}/libzmq_build"
-DISTDIR="#{DSTDIR}/libzmq_dist"
-DISTLIBDIR="#{DISTDIR}/lib"
-TARVER="4.1.6"
-TARNAME="zeromq-$TARVER"
-TARFILE="#{TARNAME}.tar.gz"
-TARURL="https://github.com/zeromq/zeromq4-1/releases/download/v#{TARVER}/#{TARFILE}"
+DSTDIR     = SCRIPTDIR
+BUILDDIR   = "#{DSTDIR}/libzmq_build"
+DISTDIR    = "#{DSTDIR}/libzmq_dist"
+DISTLIBDIR = "#{DISTDIR}/lib"
+TARVER     = "4.1.6"
+TARNAME    = "zeromq-$TARVER"
+TARFILE    = "#{TARNAME}.tar.gz"
+TARURL     = "https://github.com/zeromq/zeromq4-1/releases/download/v#{TARVER}/#{TARFILE}"
 
 # http://libwebp.webm.googlecode.com/git/iosbuild.sh
 # Extract the latest SDK version from the final field of the form: iphoneosX.Y
@@ -51,13 +51,12 @@ TARURL="https://github.com/zeromq/zeromq4-1/releases/download/v#{TARVER}/#{TARFI
 #     | grep iphoneos | sort | tail -n 1 | awk '{print substr($NF, 9)}'
 #     )
 # 
-IOS_VERSION_MIN=9.0
-OTHER_LDFLAGS=""
-OTHER_CFLAGS="-Os -Qunused-arguments"
-
+IOS_VERSION_MIN = 9.0
+OTHER_LDFLAGS   = ""
+OTHER_CFLAGS    = "-Os -Qunused-arguments"
 # Enable Bitcode
-OTHER_CPPFLAGS="-Os -I#{LIBSODIUM_DIST}/include -fembed-bitcode"
-OTHER_CXXFLAGS="-Os"
+OTHER_CPPFLAGS  = "-Os -I#{LIBSODIUM_DIST}/include -fembed-bitcode"
+OTHER_CXXFLAGS  ="-Os"
 
 # Download and extract ZeroMQ
 FileUtils.rm_rf LIBDIR
@@ -81,53 +80,53 @@ FileUtils.mkdir_p DISTDIR
 FileUtils.cd LIBDIR
 
 def build_armv7
-  platform="iPhoneOS"
-  host="#{ARCH}-apple-darwin"
+  platform        = "iPhoneOS"
+  host            = "#{ARCH}-apple-darwin"
   ENV["BASEDIR"]  = "#{DEVELOPER}/Platforms/#{platform}.platform/Developer"
   ENV["ISDKROOT"] = "#{BASEDIR}/SDKs/#{platform}#{SDK}.sdk"
   ENV["CXXFLAGS"] = "#{OTHER_CXXFLAGS}"
   ENV["CPPFLAGS"] = "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
-  ENV["LDFLAGS"] = "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}"
+  ENV["LDFLAGS"]  = "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}"
 end
 
 def build_armv7s
-  platform="iPhoneOS"
-  host="#{ARCH}-apple-darwin"
-  ENV["BASEDIR"] = "#{DEVELOPER}/Platforms/#{platform}.platform/Developer"
+  platform        = "iPhoneOS"
+  host            = "#{ARCH}-apple-darwin"
+  ENV["BASEDIR"]  = "#{DEVELOPER}/Platforms/#{platform}.platform/Developer"
   ENV["ISDKROOT"] = "#{BASEDIR}/SDKs/#{platform}#{SDK}.sdk"
   ENV["CXXFLAGS"] = "#{OTHER_CXXFLAGS}"
   ENV["CPPFLAGS"] = "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
-  ENV["LDFLAGS"] = "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}"
+  ENV["LDFLAGS"]  = "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}"
 end
 
 def build_arm64
-  platform="iPhoneOS"
-  host="arm-apple-darwin"
-  ENV["BASEDIR"] = "#{DEVELOPER}/Platforms/#{platform}.platform/Developer"
+  platform        = "iPhoneOS"
+  host            = "arm-apple-darwin"
+  ENV["BASEDIR"]  = "#{DEVELOPER}/Platforms/#{platform}.platform/Developer"
   ENV["ISDKROOT"] = "#{BASEDIR}/SDKs/#{platform}#{SDK}.sdk"
   ENV["CXXFLAGS"] = "#{OTHER_CXXFLAGS}"
   ENV["CPPFLAGS"] = "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
-  ENV["LDFLAGS"] = "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}"
+  ENV["LDFLAGS"]  = "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}"
 end
 
 def build_i386
-  platform="iPhoneSimulator"
-  host="#{ARCH}-apple-darwin"
-  ENV["BASEDIR"] = "#{DEVELOPER}/Platforms/#{platform}.platform/Developer"
+  platform        = "iPhoneSimulator"
+  host            = "#{ARCH}-apple-darwin"
+  ENV["BASEDIR"]  = "#{DEVELOPER}/Platforms/#{platform}.platform/Developer"
   ENV["ISDKROOT"] = "#{BASEDIR}/SDKs/#{platform}#{SDK}.sdk"
   ENV["CXXFLAGS"] = "#{OTHER_CXXFLAGS}"
   ENV["CPPFLAGS"] = "-m32 -arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
-  ENV["LDFLAGS"] = "-m32 -arch #{ARCH} #{OTHER_LDFLAGS}"
+  ENV["LDFLAGS"]  = "-m32 -arch #{ARCH} #{OTHER_LDFLAGS}"
 end
 
 def build_x86_64
-  platform="iPhoneSimulator"
-  host="#{ARCH}-apple-darwin"
-  ENV["BASEDIR"] = "#{DEVELOPER}/Platforms/#{platform}.platform/Developer"
+  platform        = "iPhoneSimulator"
+  host            = "#{ARCH}-apple-darwin"
+  ENV["BASEDIR"]  = "#{DEVELOPER}/Platforms/#{platform}.platform/Developer"
   ENV["ISDKROOT"] = "#{BASEDIR}/SDKs/#{platform}#{SDK}.sdk"
   ENV["CXXFLAGS"] = "#{OTHER_CXXFLAGS}"
   ENV["CPPFLAGS"] = "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
-  ENV["LDFLAGS"] = "-arch #{ARCH} #{OTHER_LDFLAGS}"
+  ENV["LDFLAGS"]  = "-arch #{ARCH} #{OTHER_LDFLAGS}"
 end
 
 # Iterate over archs and compile static libs
