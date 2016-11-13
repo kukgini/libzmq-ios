@@ -34,7 +34,7 @@ LIPO                    = `xcrun -sdk iphoneos -find lipo`.chomp
 SCRIPTDIR               = File.absolute_path(File.dirname(__FILE__))
 
 # libsodium root directory
-LIBDIR                  = File.join(SCRIPTDIR, "build/libzeromq")
+LIBDIR                  = File.join(SCRIPTDIR, "build/zeromq")
 
 # Destination directory for build and install
 BUILDDIR="#{SCRIPTDIR}/build"
@@ -71,6 +71,7 @@ puts "tvOS    SDK version = #{TVOS_SDK_VERSION}"
 
 # Enable Bitcode
 OTHER_CXXFLAGS="-Os"
+
 
 # Cleanup
 if File.directory? BUILDDIR
@@ -110,6 +111,7 @@ for platform in PLATFORMS
     FileUtils.mkdir_p(build_arch_dir)
 
     build_type = "#{platform}-#{arch}"
+    other_cppflags = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include -fembed-bitcode"
     case build_type
     when "iOS-armv7"
       # iOS 32-bit ARM (till iPhone 4s)
@@ -120,7 +122,7 @@ for platform in PLATFORMS
       isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{IOS_SDK_VERSION}.sdk"
       ENV["ISDKROOT"] = isdk_root
       ENV["CXXFLAGS"] = OTHER_CXXFLAGS
-      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mios-version-min=#{IOS_VERSION_MIN} #{other_cppflags}"
       ENV["LDFLAGS"]  = "-mthumb -arch #{arch} -isysroot #{isdk_root}"
     when "iOS-armv7s"
       # iOS 32-bit ARM (iPhone 5 till iPhone 5c)
@@ -130,8 +132,8 @@ for platform in PLATFORMS
       ENV["BASEDIR"]  = base_dir
       isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{IOS_SDK_VERSION}.sdk"
       ENV["ISDKROOT"] = isdk_root
-      ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include -fembed-bitcode"
-      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+      ENV["CXXFLAGS"] = other_cppflags
+      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mios-version-min=#{IOS_VERSION_MIN} #{other_cppflags}"
       ENV["LDFLAGS"]  = "-mthumb -arch #{arch} -isysroot #{isdk_root}"
     when "watchOS-armv7k"
       # watchOS 32-bit ARM
@@ -142,7 +144,7 @@ for platform in PLATFORMS
       isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{WATCHOS_SDK_VERSION}.sdk"
       ENV["ISDKROOT"] = isdk_root
       ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
-      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mwatchos-version-min=#{WATCHOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mwatchos-version-min=#{WATCHOS_VERSION_MIN} #{other_cppflags}"
       ENV["LDFLAGS"]  = "-mthumb -arch #{arch} -isysroot #{isdk_root}"
     when "iOS-arm64"
       # iOS 64-bit ARM (iPhone 5s and later)
@@ -153,7 +155,7 @@ for platform in PLATFORMS
       isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{IOS_SDK_VERSION}.sdk"
       ENV["ISDKROOT"] = isdk_root
       ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
-      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root}  -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root}  -mios-version-min=#{IOS_VERSION_MIN} #{other_cppflags}"
       ENV["LDFLAGS"]  = "-mthumb -arch #{arch} -isysroot #{isdk_root}"
     when "tvOS-arm64"
       # tvOS 64-bit ARM (Apple TV 4)
@@ -164,7 +166,7 @@ for platform in PLATFORMS
       isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{TVOS_SDK_VERSION}.sdk"
       ENV["ISDKROOT"] = isdk_root
       ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
-      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mtvos-version-min=#{TVOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mtvos-version-min=#{TVOS_VERSION_MIN} #{other_cppflags}"
       ENV["LDFLAGS"]  = "-mthumb -arch #{arch} -isysroot #{isdk_root}"
         #   tvsos-version-min?
     when "iOS-i386"
@@ -176,7 +178,7 @@ for platform in PLATFORMS
       isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{IOS_SDK_VERSION}.sdk"
       ENV["ISDKROOT"] = isdk_root
       ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
-      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mios-version-min=#{IOS_VERSION_MIN} #{other_cppflags}"
       ENV["LDFLAGS"]  = "-m32 -arch #{arch}"
     when "macOS-i386"
       # macOS 32-bit
@@ -187,7 +189,7 @@ for platform in PLATFORMS
       isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{MACOS_SDK_VERSION}.sdk"
       ENV["ISDKROOT"] = isdk_root
       ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
-      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mmacosx-version-min=#{MACOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mmacosx-version-min=#{MACOS_VERSION_MIN} #{other_cppflags}"
       ENV["LDFLAGS"]  = "-m32 -arch #{arch}"
     when "watchOS-i386"
       # watchOS 32-bit simulator
@@ -198,7 +200,7 @@ for platform in PLATFORMS
       isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{WATCHOS_SDK_VERSION}.sdk"
       ENV["ISDKROOT"] = isdk_root
       ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
-      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mwatchos-version-min=#{WATCHOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mwatchos-version-min=#{WATCHOS_VERSION_MIN} #{other_cppflags}"
       ENV["LDFLAGS"]  = "-m32 -arch #{arch}"
     when "iOS-x86_64"
       # iOS 64-bit simulator (iOS 7+)
@@ -209,7 +211,7 @@ for platform in PLATFORMS
       isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{IOS_SDK_VERSION}.sdk"
       ENV["ISDKROOT"] = isdk_root
       ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
-      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mios-version-min=#{IOS_VERSION_MIN} #{other_cppflags}"
       ENV["LDFLAGS"]  = "-arch #{arch}"
     when "macOS-x86_64"
       # macOS 64-bit
@@ -220,7 +222,7 @@ for platform in PLATFORMS
       isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{MACOS_SDK_VERSION}.sdk"
       ENV["ISDKROOT"] = isdk_root
       ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
-      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mmacosx-version-min=#{MACOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mmacosx-version-min=#{MACOS_VERSION_MIN} #{other_cppflags}"
       ENV["LDFLAGS"]  = "-arch #{arch}"
     when "tvOS-x86_64"
       # tvOS 64-bit simulator
@@ -231,7 +233,7 @@ for platform in PLATFORMS
       isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{TVOS_SDK_VERSION}.sdk"
       ENV["ISDKROOT"] = isdk_root
       ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
-      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mtvos-version-min=#{TVOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mtvos-version-min=#{TVOS_VERSION_MIN} #{other_cppflags}"
       ENV["LDFLAGS"]  = "-arch #{arch}"
     else
       warn "Unsupported platform/architecture #{build_type}"
@@ -243,32 +245,33 @@ for platform in PLATFORMS
     ENV["PATH"] = "#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin:" +
       "#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/sbin:#{ENV["PATH"]}"
 
-      puts "Configuring for #{arch}..."
-      FileUtils.cd(LIBDIR)
-      configure_cmd = [
-        "./configure",
-        "--prefix=#{build_arch_dir}",
-        "--disable-shared",
-        "--enable-static",
-        "--host=#{host}",
-        "--with-libsodium=#{LIBSODIUM_DIST}/#{platform}",
-      ]
-      exit 1 unless system(configure_cmd.join(" "))
+    puts "Configuring for #{arch}..."
+    FileUtils.cd(LIBDIR)
+    configure_cmd = [
+      "./configure",
+      "--prefix=#{build_arch_dir}",
+      "--disable-shared",
+      "--enable-static",
+      "--host=#{host}",
+      "--with-libsodium=#{LIBSODIUM_DIST}/#{platform}",
+    ]
+    exit 1 unless system(configure_cmd.join(" "))
 
-      # Workaround to disable clock_gettime since it is only available on iOS 10+
-      FileUtils.cp "../platform-patched.hpp", "src/platform.hpp"
+    # Workaround to disable clock_gettime since it is only available on iOS 10+
+    FileUtils.cp "#{SCRIPTDIR}/platform-patched.hpp", "#{BUILDDIR}/zeromq/src/platform.hpp"
 
-      puts "Building #{LIBNAME} for #{arch}..."
-      exit 1 unless system("make distclean")
-      exit 1 unless system("make -j8 V=0")
-      exit 1 unless system("make install")
+    puts "Building #{LIBNAME} for #{arch}..."
+    exit 1 unless system("make distclean")
+    exit 1 unless system("make -j8 V=0")
+    exit 1 unless system("make install")
 
-      # Add to the architecture-dependent library list for the current platform
-      libs = libs_per_platform[platform]
-      if libs == nil
-        libs_per_platform[platform] = libs = []
-      end
-      libs.push "#{build_arch_dir}/lib/#{LIBNAME}"
+    # Add to the architecture-dependent library list for the current platform
+    libs = libs_per_platform[platform]
+    if libs == nil
+      libs_per_platform[platform] = libs = []
+    end
+    libs.push "#{build_arch_dir}/lib/#{LIBNAME}"
+  end
 end
 
 # Build a single universal (fat) library file for each platform
