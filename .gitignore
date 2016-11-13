@@ -1,3 +1,3 @@
-libzeromq
-libzmq_dist
+build
+dist
 .DS_Store

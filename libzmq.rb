@@ -1,191 +1,305 @@
 #!/usr/bin/env ruby
 
 #
-# A script to download and build libzmq for iOS written in Ruby, including arm64
-# Adapted from https://github.com/azawawi/libzmq-ios
+# A script to download and build libzmq for iOS, including arm64
+# Adapted from https://github.com/drewcrawford/libzmq-ios/blob/master/libzmq.sh
 #
 
-# set -e
+require 'fileutils'
 
-require "FileUtils"
+# ZeroMQ release version
+PKG_VER="4.1.6"
 
-# for now
-exit 1
+# Minimum platform versions
+IOS_VERSION_MIN         = "9.0"
+MACOS_VERSION_MIN       = "10.11"
+TVOS_VERSION_MIN        = "9.0"
+WATCHOS_VERSION_MIN     = "2.0"
 
-LIBNAME           = "libzmq.a"
-ROOTDIR           = Dir.pwd
 
-#libsodium
-LIBSODIUM_DIST    = "#{ROOTDIR}/libsodium-ios/libsodium_dist/"
-puts "Building dependency 'libsodium-ios'..."
-FileUtils.cd 'libsodium-ios'
-system 'libsodium.sh'
-FileUtils.cd ROOTDIR
+LIBNAME="libzmq.a"
+ROOTDIR=File.absolute_path(File.dirname(__FILE__))
+LIBSODIUM_DIST=File.join(ROOTDIR, "dist")
+VALID_ARHS_PER_PLATFORM = {
+  "iOS"     => ["armv7", "armv7s", "arm64", "i386", "x86_64"],
+  "macOS"   => ["x86_64"],
+  "tvOS"    => ["arm64", "x86_64"],
+  "watchOS" => ["armv7k", "i386"],
+}
 
-ARCHS             = ["armv7", "armv7s", "arm64", "i386", "x86_64"]
-DEVELOPER         = `xcode-select -print-path`
-LIPO              = `xcrun -sdk iphoneos -find lipo`
+DEVELOPER               = `xcode-select -print-path`.chomp
+LIPO                    = `xcrun -sdk iphoneos -find lipo`.chomp
 
 # Script's directory
-SCRIPTDIR         = File.dirname(__FILE__)
+SCRIPTDIR               = File.absolute_path(File.dirname(__FILE__))
 
 # libsodium root directory
-LIBDIR            = "libzeromq"
-FileUtils.mkdir_p LIBDIR
-
-LIBDIR            = File.dirname(LIBDIR)
+LIBDIR                  = File.join(SCRIPTDIR, "build/libzeromq")
 
 # Destination directory for build and install
-DSTDIR            = SCRIPTDIR
-BUILDDIR          = "#{DSTDIR}/libzmq_build"
-DISTDIR           = "#{DSTDIR}/libzmq_dist"
-DISTLIBDIR        = "#{DISTDIR}/lib"
-TARVER            = "4.1.6"
-TARNAME           = "zeromq-$TARVER"
-TARFILE           = "#{TARNAME}.tar.gz"
-TARURL            = "https://github.com/zeromq/zeromq4-1/releases/download/v#{TARVER}/#{TARFILE}"
+BUILDDIR="#{SCRIPTDIR}/build"
+DISTDIR="#{SCRIPTDIR}/dist"
+DISTLIBDIR="#{SCRIPTDIR}/lib"
 
-# http://libwebp.webm.googlecode.com/git/iosbuild.sh
-# Extract the latest SDK version from the final field of the form: iphoneosX.Y
-# SDK=$(xcodebuild -showsdks \
-#     | grep iphoneos | sort | tail -n 1 | awk '{print substr($NF, 9)}'
-#     )
-#
-IOS_VERSION_MIN   = 9.0
-OTHER_LDFLAGS     = ""
-OTHER_CFLAGS      = "-Os -Qunused-arguments"
+def find_sdks
+  sdks=`xcodebuild -showsdks`.chomp
+  sdk_versions = {}
+  for line in sdks.lines do
+    if line =~ /-sdk iphoneos(\S+)/
+      sdk_versions["iOS"]     = $1
+    elsif line =~ /-sdk macosx(\S+)/
+      sdk_versions["macOS"]   = $1
+    elsif line =~ /-sdk appletvos(\S+)/
+      sdk_versions["tvOS"]    = $1
+    elsif line =~ /-sdk watchos(\S+)/
+      sdk_versions["watchOS"] = $1
+    end
+  end
+  return sdk_versions
+end
+
+sdk_versions            = find_sdks()
+IOS_SDK_VERSION         = sdk_versions["iOS"]
+MACOS_SDK_VERSION       = sdk_versions["macOS"]
+TVOS_SDK_VERSION        = sdk_versions["tvOS"]
+WATCHOS_SDK_VERSION     = sdk_versions["watchOS"]
+
+puts "iOS     SDK version = #{IOS_SDK_VERSION}"
+puts "macOS   SDK version = #{MACOS_SDK_VERSION}"
+puts "watchOS SDK version = #{WATCHOS_SDK_VERSION}"
+puts "tvOS    SDK version = #{TVOS_SDK_VERSION}"
+
 # Enable Bitcode
-OTHER_CPPFLAGS    = "-Os -I#{LIBSODIUM_DIST}/include -fembed-bitcode"
-OTHER_CXXFLAGS    = "-Os"
-
-# Download and extract ZeroMQ
-FileUtils.rm_rf LIBDIR
-# set -e
-# curl -O -L $TARURL
-# tar xzf $TARFILE
-FileUtils.rm TARFILE
-FileUtils.mv TARNAME, LIBDIR
+OTHER_CXXFLAGS="-Os"
 
 # Cleanup
 if File.directory? BUILDDIR
-  FileUtils.rm_rf BUILDDIR
+    FileUtils.rm_rf BUILDDIR
 end
 if File.directory? DISTDIR
-  FileUtils.rm_rf DISTDIR
+    FileUtils.rm_rf DISTDIR
 end
 FileUtils.mkdir_p BUILDDIR
 FileUtils.mkdir_p DISTDIR
 
-# Generate autoconf files
-FileUtils.cd LIBDIR
-
-def build_armv7
-  platform        = "iPhoneOS"
-  host            = "#{ARCH}-apple-darwin"
-  ENV["BASEDIR"]  = "#{DEVELOPER}/Platforms/#{platform}.platform/Developer"
-  ENV["ISDKROOT"] = "#{BASEDIR}/SDKs/#{platform}#{SDK}.sdk"
-  ENV["CXXFLAGS"] = "#{OTHER_CXXFLAGS}"
-  ENV["CPPFLAGS"] = "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
-  ENV["LDFLAGS"]  = "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}"
+# Download and extract the latest stable release indicated by PKG_VER variable
+def download_and_extract_libzeromq()
+  puts "Downloading latest stable release of 'zeromq'"
+  pkg_name      = "zeromq-#{PKG_VER}"
+  pkg           = "#{pkg_name}.tar.gz"
+  url           = "https://github.com/zeromq/zeromq4-1/releases/download/v#{PKG_VER}/#{pkg}"
+  exit 1 unless system("cd #{BUILDDIR} && curl -O -L #{url}")
+  exit 1 unless system("cd #{BUILDDIR} && tar xzf #{pkg}")
+  FileUtils.mv "#{BUILDDIR}/#{pkg_name}", "build/zeromq"
+  FileUtils.rm "#{BUILDDIR}/#{pkg}"
 end
 
-def build_armv7s
-  platform        = "iPhoneOS"
-  host            = "#{ARCH}-apple-darwin"
-  ENV["BASEDIR"]  = "#{DEVELOPER}/Platforms/#{platform}.platform/Developer"
-  ENV["ISDKROOT"] = "#{BASEDIR}/SDKs/#{platform}#{SDK}.sdk"
-  ENV["CXXFLAGS"] = "#{OTHER_CXXFLAGS}"
-  ENV["CPPFLAGS"] = "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
-  ENV["LDFLAGS"]  = "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}"
-end
+# Download and extract ZeroMQ
+download_and_extract_libzeromq()
 
-def build_arm64
-  platform        = "iPhoneOS"
-  host            = "arm-apple-darwin"
-  ENV["BASEDIR"]  = "#{DEVELOPER}/Platforms/#{platform}.platform/Developer"
-  ENV["ISDKROOT"] = "#{BASEDIR}/SDKs/#{platform}#{SDK}.sdk"
-  ENV["CXXFLAGS"] = "#{OTHER_CXXFLAGS}"
-  ENV["CPPFLAGS"] = "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
-  ENV["LDFLAGS"]  = "-arch #{ARCH} -isysroot #{ISDKROOT} #{OTHER_LDFLAGS}"
-end
+PLATFORMS = sdk_versions.keys
+libs_per_platform = {}
 
-def build_i386
-  platform        = "iPhoneSimulator"
-  host            = "#{ARCH}-apple-darwin"
-  ENV["BASEDIR"]  = "#{DEVELOPER}/Platforms/#{platform}.platform/Developer"
-  ENV["ISDKROOT"] = "#{BASEDIR}/SDKs/#{platform}#{SDK}.sdk"
-  ENV["CXXFLAGS"] = "#{OTHER_CXXFLAGS}"
-  ENV["CPPFLAGS"] = "-m32 -arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
-  ENV["LDFLAGS"]  = "-m32 -arch #{ARCH} #{OTHER_LDFLAGS}"
-end
+# Compile zeromq for each Apple device platform
+for platform in PLATFORMS
+  # Compile zeromq for each valid Apple device architecture
+  archs = VALID_ARHS_PER_PLATFORM[platform]
+  for arch in archs
+    puts "Building #{platform}/#{arch}..."
+    build_arch_dir=File.absolute_path("#{BUILDDIR}/#{platform}-#{arch}")
+    FileUtils.mkdir_p(build_arch_dir)
 
-def build_x86_64
-  platform        = "iPhoneSimulator"
-  host            = "#{ARCH}-apple-darwin"
-  ENV["BASEDIR"]  = "#{DEVELOPER}/Platforms/#{platform}.platform/Developer"
-  ENV["ISDKROOT"] = "#{BASEDIR}/SDKs/#{platform}#{SDK}.sdk"
-  ENV["CXXFLAGS"] = "#{OTHER_CXXFLAGS}"
-  ENV["CPPFLAGS"] = "-arch #{ARCH} -isysroot #{ISDKROOT} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
-  ENV["LDFLAGS"]  = "-arch #{ARCH} #{OTHER_LDFLAGS}"
-end
-
-# Iterate over archs and compile static libs
-liblist           = []
-for ARCH in ARCHS
-  BUILDARCHDIR    = "#{BUILDDIR}/#{ARCH}"
-  FileUtils.mkdir_p BUILDARCHDIR
-
-  case ARCH
-    when "armv7"
-      build_armv7()
-    when "armv7s"
-      build_armv7s()
-    when "arm64"
-      build_arm64()
-    when "i386"
-      build_i386()
-    when "x86_64"
-      build_x86_64()
+    build_type = "#{platform}-#{arch}"
+    case build_type
+    when "iOS-armv7"
+      # iOS 32-bit ARM (till iPhone 4s)
+      platform_name   = "iPhoneOS"
+      host            = "#{arch}-apple-darwin"
+      base_dir        = "#{DEVELOPER}/Platforms/#{platform_name}.platform/Developer"
+      ENV["BASEDIR"]  = base_dir
+      isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{IOS_SDK_VERSION}.sdk"
+      ENV["ISDKROOT"] = isdk_root
+      ENV["CXXFLAGS"] = OTHER_CXXFLAGS
+      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+      ENV["LDFLAGS"]  = "-mthumb -arch #{arch} -isysroot #{isdk_root}"
+    when "iOS-armv7s"
+      # iOS 32-bit ARM (iPhone 5 till iPhone 5c)
+      platform_name   = "iPhoneOS"
+      host            = "#{arch}-apple-darwin"
+      base_dir        = "#{DEVELOPER}/Platforms/#{platform_name}.platform/Developer"
+      ENV["BASEDIR"]  = base_dir
+      isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{IOS_SDK_VERSION}.sdk"
+      ENV["ISDKROOT"] = isdk_root
+      ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include -fembed-bitcode"
+      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+      ENV["LDFLAGS"]  = "-mthumb -arch #{arch} -isysroot #{isdk_root}"
+    when "watchOS-armv7k"
+      # watchOS 32-bit ARM
+      platform_name   = "WatchOS"
+      host            = "#{arch}-apple-darwin"
+      base_dir        = "#{DEVELOPER}/Platforms/#{platform_name}.platform/Developer"
+      ENV["BASEDIR"]  = base_dir
+      isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{WATCHOS_SDK_VERSION}.sdk"
+      ENV["ISDKROOT"] = isdk_root
+      ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
+      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mwatchos-version-min=#{WATCHOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+      ENV["LDFLAGS"]  = "-mthumb -arch #{arch} -isysroot #{isdk_root}"
+    when "iOS-arm64"
+      # iOS 64-bit ARM (iPhone 5s and later)
+      platform_name   = "iPhoneOS"
+      host            = "arm-apple-darwin"
+      base_dir        = "#{DEVELOPER}/Platforms/#{platform_name}.platform/Developer"
+      ENV["BASEDIR"]  = base_dir
+      isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{IOS_SDK_VERSION}.sdk"
+      ENV["ISDKROOT"] = isdk_root
+      ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
+      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root}  -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+      ENV["LDFLAGS"]  = "-mthumb -arch #{arch} -isysroot #{isdk_root}"
+    when "tvOS-arm64"
+      # tvOS 64-bit ARM (Apple TV 4)
+      platform_name   = "AppleTVOS"
+      host            = "arm-apple-darwin"
+      base_dir        = "#{DEVELOPER}/Platforms/#{platform_name}.platform/Developer"
+      ENV["BASEDIR"]  = base_dir
+      isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{TVOS_SDK_VERSION}.sdk"
+      ENV["ISDKROOT"] = isdk_root
+      ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
+      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mtvos-version-min=#{TVOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+      ENV["LDFLAGS"]  = "-mthumb -arch #{arch} -isysroot #{isdk_root}"
+        #   tvsos-version-min?
+    when "iOS-i386"
+      # iOS 32-bit simulator (iOS 6.1 and below)
+      platform_name   = "iPhoneSimulator"
+      host            = "#{arch}-apple-darwin"
+      base_dir        = "#{DEVELOPER}/Platforms/#{platform_name}.platform/Developer"
+      ENV["BASEDIR"]  = base_dir
+      isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{IOS_SDK_VERSION}.sdk"
+      ENV["ISDKROOT"] = isdk_root
+      ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
+      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+      ENV["LDFLAGS"]  = "-m32 -arch #{arch}"
+    when "macOS-i386"
+      # macOS 32-bit
+      platform_name   = "MacOSX"
+      host            = "#{arch}-apple-darwin"
+      base_dir        = "#{DEVELOPER}/Platforms/#{platform_name}.platform/Developer"
+      ENV["BASEDIR"]  = base_dir
+      isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{MACOS_SDK_VERSION}.sdk"
+      ENV["ISDKROOT"] = isdk_root
+      ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
+      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mmacosx-version-min=#{MACOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+      ENV["LDFLAGS"]  = "-m32 -arch #{arch}"
+    when "watchOS-i386"
+      # watchOS 32-bit simulator
+      platform_name   = "WatchSimulator"
+      host            = "#{arch}-apple-darwin"
+      base_dir        = "#{DEVELOPER}/Platforms/#{platform_name}.platform/Developer"
+      ENV["BASEDIR"]  = base_dir
+      isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{WATCHOS_SDK_VERSION}.sdk"
+      ENV["ISDKROOT"] = isdk_root
+      ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
+      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mwatchos-version-min=#{WATCHOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+      ENV["LDFLAGS"]  = "-m32 -arch #{arch}"
+    when "iOS-x86_64"
+      # iOS 64-bit simulator (iOS 7+)
+      platform_name   = "iPhoneSimulator"
+      host            = "#{arch}-apple-darwin"
+      base_dir        = "#{DEVELOPER}/Platforms/#{platform_name}.platform/Developer"
+      ENV["BASEDIR"]  = base_dir
+      isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{IOS_SDK_VERSION}.sdk"
+      ENV["ISDKROOT"] = isdk_root
+      ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
+      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mios-version-min=#{IOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+      ENV["LDFLAGS"]  = "-arch #{arch}"
+    when "macOS-x86_64"
+      # macOS 64-bit
+      platform_name   = "MacOSX"
+      host            = "#{arch}-apple-darwin"
+      base_dir        = "#{DEVELOPER}/Platforms/#{platform_name}.platform/Developer"
+      ENV["BASEDIR"]  = base_dir
+      isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{MACOS_SDK_VERSION}.sdk"
+      ENV["ISDKROOT"] = isdk_root
+      ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
+      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mmacosx-version-min=#{MACOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+      ENV["LDFLAGS"]  = "-arch #{arch}"
+    when "tvOS-x86_64"
+      # tvOS 64-bit simulator
+      platform_name   = "AppleTVSimulator"
+      host            = "#{arch}-apple-darwin"
+      base_dir        = "#{DEVELOPER}/Platforms/#{platform_name}.platform/Developer"
+      ENV["BASEDIR"]  = base_dir
+      isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{TVOS_SDK_VERSION}.sdk"
+      ENV["ISDKROOT"] = isdk_root
+      ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
+      ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mtvos-version-min=#{TVOS_VERSION_MIN} #{OTHER_CPPFLAGS}"
+      ENV["LDFLAGS"]  = "-arch #{arch}"
     else
-      puts "Unsupported architecture '#{ARCH}'"
-      exit 1
+      warn "Unsupported platform/architecture #{build_type}"
+      next
+      #exit 1
+    end
+
+    # Modify path to include Xcode toolchain path
+    ENV["PATH"] = "#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin:" +
+      "#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/sbin:#{ENV["PATH"]}"
+
+      puts "Configuring for #{arch}..."
+      FileUtils.cd(LIBDIR)
+      configure_cmd = [
+        "./configure",
+        "--prefix=#{build_arch_dir}",
+        "--disable-shared",
+        "--enable-static",
+        "--host=#{host}",
+        "--with-libsodium=#{LIBSODIUM_DIST}/#{platform}",
+      ]
+      exit 1 unless system(configure_cmd.join(" "))
+
+      # Workaround to disable clock_gettime since it is only available on iOS 10+
+      FileUtils.cp "../platform-patched.hpp", "src/platform.hpp"
+
+      puts "Building #{LIBNAME} for #{arch}..."
+      exit 1 unless system("make distclean")
+      exit 1 unless system("make -j8 V=0")
+      exit 1 unless system("make install")
+
+      # Add to the architecture-dependent library list for the current platform
+      libs = libs_per_platform[platform]
+      if libs == nil
+        libs_per_platform[platform] = libs = []
+      end
+      libs.push "#{build_arch_dir}/lib/#{LIBNAME}"
+end
+
+# Build a single universal (fat) library file for each platform
+# And copy headers
+for platform in PLATFORMS
+  dist_platform_folder = "#{DISTDIR}/#{platform.downcase}"
+  dist_platform_lib    = "#{dist_platform_folder}/lib"
+  FileUtils.mkdir_p dist_platform_lib
+
+  # Find libraries for platform
+  libs                 = libs_per_platform[platform]
+
+  # Make sure library list is not empty
+  if libs == nil || libs.length == 0
+    warn "Nothing to do for #{LIBNAME}"
+    next
   end
 
-  ENV["PATH"] = "#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin:"  +
-                "#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/sbin:" +
-                ENV["PATH"]
-  puts "Configuring for #{ARCH}..."
+  # Build universal library file (aka fat binary)
+  lipo_cmd = "#{LIPO} -create #{libs.join(" ")} -output #{dist_platform_lib}/#{LIBNAME}"
+  puts "Combining #{libs.length} libraries into #{LIBNAME} for #{platform}..."
+  exit 1 unless system(lipo_cmd)
 
-#
-#     set +e
-#     cd #{LIBDIR} && make distclean
-#     set -e
-#     #{LIBDIR}/configure \
-# 	--prefix=#{BUILDARCHDIR} \
-# 	--disable-shared \
-# 	--enable-static \
-# 	--host=#{HOST}\
-# 	--with-libsodium=#{LIBSODIUM_DIST}
+  # Copy headers for architecture
+  for arch in VALID_ARHS_PER_PLATFORM["iOS"]
+      include_dir = "#{BUILDDIR}/#{platform}-#{arch}/include"
+      if File.directory? include_dir
+        FileUtils.cp_r(include_dir, dist_platform_folder)
+      end
+  end
 
-  puts "Building #{LIBNAME} for #{ARCH}..."
-  FileUtils.cd LIBDIR
-
-  # Workaround to disable clock_gettime since it is only available on iOS 10+
-  FileUtils.cp("../platform-patched.hpp", "src/platform.hpp")
-
-  system "make -j8 V=0"
-  system "make install"
-
-  liblist.push "#{BUILDARCHDIR}/lib/#{LIBNAME}"
-end
-
-# Copy headers and generate a single fat library file
-FileUtils.mkdir_p DISTLIBDIR
-system "#{LIPO} -create #{liblist.join(" ")} -output #{DISTLIBDIR}/#{LIBNAME}"
-
-for ARCH in $ARCHS
-  FileUtils.cp_r "#{BUILDDIR}/#{ARCH}/include", DISTDIR
-  break
 end
 
 # Cleanup
