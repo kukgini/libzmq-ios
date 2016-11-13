@@ -144,7 +144,7 @@ for platform in PLATFORMS
       ENV["BASEDIR"]  = base_dir
       isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{WATCHOS_SDK_VERSION}.sdk"
       ENV["ISDKROOT"] = isdk_root
-      ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
+      ENV["CXXFLAGS"] = other_cppflags
       ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mwatchos-version-min=#{WATCHOS_VERSION_MIN} #{other_cppflags}"
       ENV["LDFLAGS"]  = "-mthumb -arch #{arch} -isysroot #{isdk_root}"
     when "iOS-arm64"
@@ -155,7 +155,7 @@ for platform in PLATFORMS
       ENV["BASEDIR"]  = base_dir
       isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{IOS_SDK_VERSION}.sdk"
       ENV["ISDKROOT"] = isdk_root
-      ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
+      ENV["CXXFLAGS"] = other_cppflags
       ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root}  -mios-version-min=#{IOS_VERSION_MIN} #{other_cppflags}"
       ENV["LDFLAGS"]  = "-mthumb -arch #{arch} -isysroot #{isdk_root}"
     when "tvOS-arm64"
@@ -166,7 +166,7 @@ for platform in PLATFORMS
       ENV["BASEDIR"]  = base_dir
       isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{TVOS_SDK_VERSION}.sdk"
       ENV["ISDKROOT"] = isdk_root
-      ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
+      ENV["CXXFLAGS"] = other_cppflags
       ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mtvos-version-min=#{TVOS_VERSION_MIN} #{other_cppflags}"
       ENV["LDFLAGS"]  = "-mthumb -arch #{arch} -isysroot #{isdk_root}"
         #   tvsos-version-min?
@@ -178,7 +178,7 @@ for platform in PLATFORMS
       ENV["BASEDIR"]  = base_dir
       isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{IOS_SDK_VERSION}.sdk"
       ENV["ISDKROOT"] = isdk_root
-      ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
+      ENV["CXXFLAGS"] = other_cppflags
       ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mios-version-min=#{IOS_VERSION_MIN} #{other_cppflags}"
       ENV["LDFLAGS"]  = "-m32 -arch #{arch}"
     when "macOS-i386"
@@ -189,7 +189,7 @@ for platform in PLATFORMS
       ENV["BASEDIR"]  = base_dir
       isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{MACOS_SDK_VERSION}.sdk"
       ENV["ISDKROOT"] = isdk_root
-      ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
+      ENV["CXXFLAGS"] = other_cppflags
       ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mmacosx-version-min=#{MACOS_VERSION_MIN} #{other_cppflags}"
       ENV["LDFLAGS"]  = "-m32 -arch #{arch}"
     when "watchOS-i386"
@@ -200,7 +200,7 @@ for platform in PLATFORMS
       ENV["BASEDIR"]  = base_dir
       isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{WATCHOS_SDK_VERSION}.sdk"
       ENV["ISDKROOT"] = isdk_root
-      ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
+      ENV["CXXFLAGS"] = other_cppflags
       ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mwatchos-version-min=#{WATCHOS_VERSION_MIN} #{other_cppflags}"
       ENV["LDFLAGS"]  = "-m32 -arch #{arch}"
     when "iOS-x86_64"
@@ -211,7 +211,7 @@ for platform in PLATFORMS
       ENV["BASEDIR"]  = base_dir
       isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{IOS_SDK_VERSION}.sdk"
       ENV["ISDKROOT"] = isdk_root
-      ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
+      ENV["CXXFLAGS"] = other_cppflags
       ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mios-version-min=#{IOS_VERSION_MIN} #{other_cppflags}"
       ENV["LDFLAGS"]  = "-arch #{arch}"
     when "macOS-x86_64"
@@ -222,7 +222,7 @@ for platform in PLATFORMS
       ENV["BASEDIR"]  = base_dir
       isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{MACOS_SDK_VERSION}.sdk"
       ENV["ISDKROOT"] = isdk_root
-      ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
+      ENV["CXXFLAGS"] = other_cppflags
       ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mmacosx-version-min=#{MACOS_VERSION_MIN} #{other_cppflags}"
       ENV["LDFLAGS"]  = "-arch #{arch}"
     when "tvOS-x86_64"
@@ -233,7 +233,7 @@ for platform in PLATFORMS
       ENV["BASEDIR"]  = base_dir
       isdk_root       = "#{base_dir}/SDKs/#{platform_name}#{TVOS_SDK_VERSION}.sdk"
       ENV["ISDKROOT"] = isdk_root
-      ENV["CXXFLAGS"] = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include/include -fembed-bitcode"
+      ENV["CXXFLAGS"] = other_cppflags
       ENV["CPPFLAGS"]   = "-arch #{arch} -isysroot #{isdk_root} -mtvos-version-min=#{TVOS_VERSION_MIN} #{other_cppflags}"
       ENV["LDFLAGS"]  = "-arch #{arch}"
     else
