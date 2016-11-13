@@ -106,13 +106,14 @@ for platform in PLATFORMS
   # Compile zeromq for each valid Apple device architecture
   archs = VALID_ARHS_PER_PLATFORM[platform]
   for arch in archs
-    puts "Building #{platform}/#{arch}..."
+    build_type = "#{platform}-#{arch}"
+
+    puts "Building #{build_type}..."
     build_arch_dir=File.absolute_path("#{BUILDDIR}/#{platform}-#{arch}")
     FileUtils.mkdir_p(build_arch_dir)
 
-    build_type = "#{platform}-#{arch}"
-    # -fembed-bitcode
-    other_cppflags = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include"
+    other_cppflags = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include -fembed-bitcode"
+
     case build_type
     when "iOS-armv7"
       # iOS 32-bit ARM (till iPhone 4s)
@@ -246,7 +247,7 @@ for platform in PLATFORMS
     ENV["PATH"] = "#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/bin:" +
       "#{DEVELOPER}/Toolchains/XcodeDefault.xctoolchain/usr/sbin:#{ENV["PATH"]}"
 
-    puts "Configuring for #{arch}..."
+    puts "Configuring for #{build_type}..."
     FileUtils.cd(LIBDIR)
     system("make distclean")
     configure_cmd = [
@@ -262,7 +263,7 @@ for platform in PLATFORMS
     # Workaround to disable clock_gettime since it is only available on iOS 10+
     FileUtils.cp "#{SCRIPTDIR}/platform-patched.hpp", "#{BUILDDIR}/zeromq/src/platform.hpp"
 
-    puts "Building #{LIBNAME} for #{arch}..."
+    puts "Building for #{build_type}..."
     exit 1 unless system("make -j8 V=0")
     exit 1 unless system("make install")
 
