@@ -111,7 +111,8 @@ for platform in PLATFORMS
     FileUtils.mkdir_p(build_arch_dir)
 
     build_type = "#{platform}-#{arch}"
-    other_cppflags = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include -fembed-bitcode"
+    # -fembed-bitcode
+    other_cppflags = "-Os -I#{LIBSODIUM_DIST}/#{platform}/include"
     case build_type
     when "iOS-armv7"
       # iOS 32-bit ARM (till iPhone 4s)
@@ -247,6 +248,7 @@ for platform in PLATFORMS
 
     puts "Configuring for #{arch}..."
     FileUtils.cd(LIBDIR)
+    system("make distclean")
     configure_cmd = [
       "./configure",
       "--prefix=#{build_arch_dir}",
@@ -261,7 +263,6 @@ for platform in PLATFORMS
     FileUtils.cp "#{SCRIPTDIR}/platform-patched.hpp", "#{BUILDDIR}/zeromq/src/platform.hpp"
 
     puts "Building #{LIBNAME} for #{arch}..."
-    exit 1 unless system("make distclean")
     exit 1 unless system("make -j8 V=0")
     exit 1 unless system("make install")
 
