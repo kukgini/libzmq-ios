@@ -8,7 +8,7 @@
 require 'fileutils'
 
 # ZeroMQ release version
-PKG_VER="4.1.6"
+PKG_VER="4.2.0"
 
 # Minimum platform versions
 IOS_VERSION_MIN         = "9.0"
@@ -88,7 +88,7 @@ def download_and_extract_libzeromq()
   puts "Downloading latest stable release of 'zeromq'"
   pkg_name      = "zeromq-#{PKG_VER}"
   pkg           = "#{pkg_name}.tar.gz"
-  url           = "https://github.com/zeromq/zeromq4-1/releases/download/v#{PKG_VER}/#{pkg}"
+  url           = "https://github.com/zeromq/libzmq/releases/download/v#{PKG_VER}/#{pkg}"
   exit 1 unless system("cd #{BUILDDIR} && curl -O -L #{url}")
   exit 1 unless system("cd #{BUILDDIR} && tar xzf #{pkg}")
   FileUtils.mv "#{BUILDDIR}/#{pkg_name}", "build/zeromq"
@@ -239,8 +239,7 @@ for platform in PLATFORMS
       ENV["LDFLAGS"]  = "-arch #{arch}"
     else
       warn "Unsupported platform/architecture #{build_type}"
-      next
-      #exit 1
+      exit 1
     end
 
     # Modify path to include Xcode toolchain path
