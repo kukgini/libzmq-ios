@@ -8,7 +8,7 @@
 require 'fileutils'
 
 # ZeroMQ release version
-PKG_VER="4.2.1"
+PKG_VER="4.2.5"
 
 # Minimum platform versions
 IOS_VERSION_MIN         = "9.0"
