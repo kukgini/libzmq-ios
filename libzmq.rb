@@ -255,6 +255,8 @@ for platform in PLATFORMS
       "--enable-static",
       "--host=#{host}",
       "--with-libsodium=#{LIBSODIUM_DIST}/#{platform}",
+      "--disable-perf",
+      "--disable-curve-keygen",
     ]
     exit 1 unless system(configure_cmd.join(" "))
 
